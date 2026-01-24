@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Simple Web App</title>
+</head>
+<body>
+  <h1>Simple Web App (Flask)</h1>
+
+  <input id="name" placeholder="Type your name" />
+  <button onclick="sayHello()">Say Hello</button>
+
+  <p id="result"></p>
+
+  <script>
+    async function sayHello() {
+      const name = document.getElementById("name").value || "Guest";
+      const res = await fetch(`/api/hello?name=${encodeURIComponent(name)}`);
+      const data = await res.json();
+      document.getElementById("result").innerText = data.message;
+    }
+  </script>
+</body>
+</html>

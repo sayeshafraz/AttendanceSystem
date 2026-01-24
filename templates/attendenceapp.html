@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Face Attendance (Flask)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; margin: 0; background:#f6f7fb; }
+    header { padding: 14px 18px; background:#111; color:#fff; }
+    .wrap { display: flex; height: calc(100vh - 52px); }
+    .left { width: 35%; background: #f0f0f0; padding: 16px; overflow:auto; }
+    .right { width: 65%; background: #fff; padding: 16px; overflow:auto; }
+
+    .card { background:#fff; border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    .row { display:flex; gap:8px; flex-wrap: wrap; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      outline: none;
+    }
+    button {
+      padding: 10px 12px;
+      border: none;
+      border-radius: 10px;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .msg { padding: 10px; border-radius: 10px; margin-top: 10px; }
+    .msg.ok { background: #e7f8e7; border: 1px solid #b9e7b9; }
+    .msg.err { background: #ffe9e9; border: 1px solid #ffbdbd; }
+
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding: 8px; border-bottom: 1px solid #eee; text-align:left; }
+    .tag { padding: 4px 8px; border-radius: 999px; font-size: 12px; display: inline-block; }
+    .present { background:#e7f8e7; border:1px solid #b9e7b9; }
+    .absent { background:#ffe9e9; border:1px solid #ffbdbd; }
+    .saved { background:#eef2ff; border:1px solid #c7d2fe; }
+    .invalid { background:#fff7ed; border:1px solid #fdba74; }
+
+    img { max-width: 100%; border-radius: 12px; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+<header>
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div><b>Student Face Attendance</b></div>
+    <div id="authInfo" style="font-size:14px; opacity:0.9;"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="left">
+
+    <!-- LOGIN CARD (your original) -->
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;">Login (API)</h3>
+
+      <div class="row">
+        <div style="flex:1; min-width: 180px;">
+          <input id="email" type="text" placeholder="Email" />
+        </div>
+        <div style="flex:1; min-width: 180px;">
+          <input id="password" type="password" placeholder="Password" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button id="btnLogin" type="button" onclick="doLogin()">Login</button>
+        <button id="btnLogout" type="button" onclick="doLogout()" disabled>Logout</button>
+      </div>
+
+      <div id="loginMsg"></div>
+    </div>
+
+    <!-- GROUP UPLOAD -->
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;">Upload Group Image</h3>
+      <input id="groupFile" type="file" />
+      <div class="row" style="margin-top:10px;">
+        <button type="button" onclick="uploadGroup()" id="btnUploadGroup" disabled>Upload Group</button>
+      </div>
+      <div id="groupMsg"></div>
+    </div>
+
+    <!-- ADD STUDENT -->
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;">Add Student</h3>
+      <input id="stuName" type="text" placeholder="Student Name" />
+      <div style="height:8px"></div>
+      <input id="stuRoll" type="text" placeholder="Roll" />
+      <div style="height:8px"></div>
+      <input id="stuFile" type="file" />
+      <div class="row" style="margin-top:10px;">
+        <button type="button" onclick="addStudent()" id="btnAddStudent" disabled>Add Student</button>
+      </div>
+      <div id="stuMsg"></div>
+    </div>
+
+    <!-- RUN -->
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;">Run Attendance</h3>
+      <button type="button" onclick="runAttendance()" id="btnRun" disabled>Run</button>
+      <div id="runMsg"></div>
+    </div>
+
+    <!-- ✅ AT LAST: API LOGIN (only one, inside body) -->
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;">API Login (At Last)</h3>
+
+      <input id="api_email" type="text" placeholder="Email" style="margin-bottom:8px;">
+      <input id="api_password" type="password" placeholder="Password" style="margin-bottom:8px;">
+
+      <button type="button" onclick="apiLogin()">Login</button>
+
+      <div id="api_login_msg"></div>
+    </div>
+
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;">Students</h3>
+      <div id="studentsBox">Loading...</div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;">Group / Annotated</h3>
+      <div class="row">
+        <div style="flex:1; min-width:260px;">
+          <div style="font-weight:bold; margin-bottom:6px;">Group</div>
+          <img id="groupImg" src="" style="display:none;" />
+        </div>
+        <div style="flex:1; min-width:260px;">
+          <div style="font-weight:bold; margin-bottom:6px;">Annotated</div>
+          <img id="annotImg" src="" style="display:none;" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showMsg(elId, text, ok=true){
+  const el = document.getElementById(elId);
+  if(!text){
+    el.innerHTML = "";
+    return;
+  }
+  el.innerHTML = `<div class="msg ${ok ? "ok":"err"}">${text}</div>`;
+}
+
+function setLoggedInUI(logged, email){
+  document.getElementById("btnLogin").disabled = logged;
+  document.getElementById("btnLogout").disabled = !logged;
+
+  document.getElementById("btnUploadGroup").disabled = !logged;
+  document.getElementById("btnAddStudent").disabled = !logged;
+  document.getElementById("btnRun").disabled = !logged;
+
+  document.getElementById("authInfo").innerText = logged ? `Logged in: ${email}` : `Not logged in`;
+}
+
+async function doLogin(){
+  showMsg("loginMsg", "");
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if(!email || !password){
+    showMsg("loginMsg", "Email and password are required.", false);
+    return;
+  }
+
+  const r = await fetch("/login", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await r.json().catch(()=>({ok:false,message:"Invalid response"}));
+
+  if(!r.ok || !data.ok){
+    showMsg("loginMsg", data.message || "Login failed.", false);
+    setLoggedInUI(false, "");
+    return;
+  }
+
+  showMsg("loginMsg", data.message || "Logged in.", true);
+  await refreshState();
+}
+
+async function doLogout(){
+  await fetch("/logout", {method:"POST"});
+  showMsg("loginMsg", "Logged out.", true);
+  await refreshState();
+}
+
+async function apiLogin(){
+  const email = document.getElementById("api_email").value.trim();
+  const password = document.getElementById("api_password").value.trim();
+
+  if(!email || !password){
+    showMsg("api_login_msg", "Email and password are required.", false);
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append("email", email);
+  fd.append("password", password);
+
+  const r = await fetch("/login", { method: "POST", body: fd });
+  const data = await r.json().catch(()=>({ok:false,message:"Login failed"}));
+
+  if(!r.ok || !data.ok){
+    showMsg("api_login_msg", data.message || "Login failed.", false);
+    return;
+  }
+
+  showMsg("api_login_msg", data.message || "Login successful", true);
+  await refreshState();
+}
+
+async function uploadGroup(){
+  showMsg("groupMsg", "");
+  const f = document.getElementById("groupFile").files[0];
+  if(!f){
+    showMsg("groupMsg", "Please select a group image.", false);
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append("group_image", f);
+
+  const r = await fetch("/upload_group", { method:"POST", body: fd });
+  const data = await r.json().catch(()=>({message:"Failed"}));
+
+  if(!r.ok){
+    showMsg("groupMsg", data.message || "Upload failed.", false);
+    return;
+  }
+
+  showMsg("groupMsg", data.message || "Uploaded.", true);
+  await refreshState();
+}
+
+async function addStudent(){
+  showMsg("stuMsg", "");
+  const name = document.getElementById("stuName").value.trim();
+  const roll = document.getElementById("stuRoll").value.trim();
+  const f = document.getElementById("stuFile").files[0];
+
+  if(!name || !roll){
+    showMsg("stuMsg", "Name and Roll are required.", false);
+    return;
+  }
+  if(!f){
+    showMsg("stuMsg", "Please select a student image.", false);
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append("name", name);
+  fd.append("roll", roll);
+  fd.append("student_image", f);
+
+  const r = await fetch("/add_student", { method:"POST", body: fd });
+  const data = await r.json().catch(()=>({message:"Failed"}));
+
+  if(!r.ok){
+    showMsg("stuMsg", data.message || "Failed.", false);
+    return;
+  }
+
+  showMsg("stuMsg", data.message || "Saved.", true);
+  document.getElementById("stuFile").value = "";
+  await refreshState();
+}
+
+async function deleteStudent(roll){
+  if(!confirm(`Delete roll ${roll}?`)) return;
+  const r = await fetch(`/delete_student/${encodeURIComponent(roll)}`, {method:"POST"});
+  const data = await r.json().catch(()=>({message:"Failed"}));
+  if(!r.ok){
+    alert(data.message || "Delete failed");
+    return;
+  }
+  await refreshState();
+}
+
+async function runAttendance(){
+  showMsg("runMsg", "");
+  const r = await fetch("/run", {method:"POST"});
+  const data = await r.json().catch(()=>({message:"Failed"}));
+
+  if(!r.ok){
+    showMsg("runMsg", data.message || "Run failed.", false);
+    return;
+  }
+  showMsg("runMsg", data.message || "Done.", true);
+  await refreshState();
+}
+
+function statusTag(s){
+  const x = (s||"").toLowerCase();
+  let cls = "saved";
+  if(x==="present") cls="present";
+  if(x==="absent") cls="absent";
+  if(x==="invalid") cls="invalid";
+  return `<span class="tag ${cls}">${s}</span>`;
+}
+
+async function refreshState(){
+  const r = await fetch("/api/state");
+  const data = await r.json();
+
+  setLoggedInUI(!!data.logged_in, data.logged_email || "");
+
+  const students = data.students || [];
+  if(students.length === 0){
+    document.getElementById("studentsBox").innerHTML = "No students saved.";
+  } else {
+    let html = `<table>
+      <thead><tr><th>Roll</th><th>Name</th><th>Status</th><th>Image</th><th>Action</th></tr></thead><tbody>`;
+    for(const st of students){
+      const img = st.img_file ? `<a href="/student_image/${encodeURIComponent(st.img_file)}" target="_blank">view</a>` : "";
+      html += `<tr>
+        <td>${st.roll}</td>
+        <td>${st.name}</td>
+        <td>${statusTag(st.status)}</td>
+        <td>${img}</td>
+        <td><button type="button" onclick="deleteStudent('${st.roll}')">Delete</button></td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+    document.getElementById("studentsBox").innerHTML = html;
+  }
+
+  const groupImg = document.getElementById("groupImg");
+  const annotImg = document.getElementById("annotImg");
+
+  if(data.group_exists){
+    groupImg.src = `/group_image?ts=${Date.now()}`;
+    groupImg.style.display = "block";
+  } else {
+    groupImg.style.display = "none";
+  }
+
+  if(data.annotated_exists){
+    annotImg.src = `/static/results/annotated.png?ts=${Date.now()}`;
+    annotImg.style.display = "block";
+  } else {
+    annotImg.style.display = "none";
+  }
+}
+
+refreshState();
+</script>
+
+</body>
+</html>
