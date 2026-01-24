@@ -9,6 +9,8 @@ import requests
 
 from flask import Flask, request, render_template, send_from_directory
 from werkzeug.utils import secure_filename
+import os, json, time, secrets
+from flask import request, jsonify
 
 
 # =========================
@@ -28,7 +30,7 @@ MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 STUDENT_DB_DIR = os.path.join(BASE_DIR, "student_db")
 STUDENT_IMG_DIR = os.path.join(STUDENT_DB_DIR, "images")
-STUDENT_DB_JSON = os.path.join(STUDENT_DB_DIR, "students.json")
+STUDENT_DB_JSON = os.path.join(STUDENT_DB_DIR, "students.json")  # NOTE: fix spelling if needed
 
 CURRENT_GROUP_PATH = os.path.join(UPLOAD_DIR, "group.png")
 ANNOTATED_PATH = os.path.join(RESULTS_DIR, "annotated.png")
@@ -46,6 +48,7 @@ YUNET_URL = (
     "https://huggingface.co/opencv/face_detection_yunet/resolve/main/"
     "face_detection_yunet_2023mar.onnx?download=true"
 )
+
 SFACE_URL = (
     "https://huggingface.co/opencv/face_recognition_sface/resolve/main/"
     "face_recognition_sface_2021dec.onnx?download=true"
@@ -68,41 +71,42 @@ def ensure_folder(path: str):
 
 
 # =========================
-# API LOGIN (TOKEN ONLY)
+# API LOGIN (CURRENTLY HARDCODED)
 # =========================
 BASE_URL = "https://api.slcloud.3em.tech"
-ACCESS_TOKEN = None     # server-side saved token
-LOGGED_EMAIL = None     # optional (for showing in UI)
 
 
-def login_get_token(email: str, password: str):
-    """
-    Returns (token_or_none, message, status_code)
-    """
-    url = f"{BASE_URL}/api/Auth/login"
+def login_get_token(email: str, password: str) -> str:
+    url = f"{BASE_URL}/v1/auth/login"
     payload = {"email": email, "password": password}
 
-    try:
-        r = requests.post(url, json=payload, headers={"accept": "text/plain"}, timeout=30)
-    except Exception as e:
-        return None, f"API connection failed: {e}", 500
+    r = requests.post(url, json=payload, headers={"accept": "text/plain"}, timeout=15)
+    r.raise_for_status()
 
-    # wrong creds etc
-    if r.status_code >= 400:
-        # show a nicer message (don’t expose sensitive info)
-        return None, "Invalid email or password.", 401
+    data = r.json()
+    return data["accessToken"]
 
-    # success
-    try:
-        data = r.json()
-    except Exception:
-        return None, "Login response is not valid JSON.", 500
 
-    token = data.get("accessToken")
-    if not token:
-        return None, "Token not found in response.", 500
+TOKEN_STORE_PATH = os.path.join("instance", "email_token.json")
 
-    return token, "Login successful.", 200
+def ensure_folder(p):
+    os.makedirs(p, exist_ok=True)
+
+def save_email_token(email: str, token: str):
+    ensure_folder(os.path.dirname(TOKEN_STORE_PATH))
+    data = {
+        "email": email,
+        "token": token,
+        "saved_at": int(time.time())
+    }
+    with open(TOKEN_STORE_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+def load_email_token():
+    if not os.path.isfile(TOKEN_STORE_PATH):
+        return None
+    with open(TOKEN_STORE_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def file_exists(p: str) -> bool:
@@ -181,12 +185,14 @@ def load_student_db():
     try:
         with open(STUDENT_DB_JSON, "r", encoding="utf-8") as f:
             data = json.load(f)
+
         if isinstance(data, list):
             cleaned = []
             for st in data:
                 if isinstance(st, dict) and "roll" in st and "name" in st and "img_path" in st:
                     cleaned.append(st)
             return cleaned
+
         return []
     except Exception:
         return []
@@ -268,7 +274,6 @@ def load_yunet_sface():
     if not (hasattr(cv2, "FaceDetectorYN") and hasattr(cv2, "FaceRecognizerSF")):
         raise RuntimeError("Install: pip install --upgrade opencv-contrib-python")
 
-    # IMPORTANT: lazy download (not at startup)
     ensure_models()
 
     if _YUNET_CACHE is None:
@@ -384,6 +389,7 @@ def draw_present_outlines(group_img_bgr, group_faces, matched_group_indexes):
 def run_recognition_from_saved_students(group_path):
     db_students = load_student_db()
     students = []
+
     for st in db_students:
         students.append(
             {
@@ -466,27 +472,6 @@ def index():
     return render_template("attendenceapp.html")
 
 
-# NEW: login route (frontend will send email+password)
-@app.post("/login")
-def login():
-    global ACCESS_TOKEN, LOGGED_EMAIL
-
-    email = (request.form.get("email") or "").strip()
-    password = (request.form.get("password") or "").strip()
-
-    if not email or not password:
-        return {"ok": False, "message": "Email and password are required."}, 400
-
-    token, msg, code = login_get_token(email, password)
-
-    if not token:
-        return {"ok": False, "message": msg}, code
-
-    ACCESS_TOKEN = token
-    LOGGED_EMAIL = email
-    return {"ok": True, "message": "Login successful."}, 200
-
-
 @app.get("/api/state")
 def api_state():
     ensure_folder(UPLOAD_DIR)
@@ -496,7 +481,6 @@ def api_state():
 
     db = load_student_db()
 
-    # apply statuses from last run (if exists)
     status_map = {}
     if os.path.isfile(LAST_RESULTS_JSON):
         try:
@@ -528,9 +512,6 @@ def api_state():
         "group_exists": group_exists,
         "annotated_exists": annotated_exists,
         "message": "",
-        # extra (won't break old UI)
-        "logged_in": bool(ACCESS_TOKEN),
-        "logged_email": LOGGED_EMAIL or ""
     }
 
 
@@ -554,7 +535,6 @@ def upload_group():
     if not f or f.filename == "":
         return {"message": "Please select a group image."}, 400
 
-    # ACCEPT ALL EXTENSIONS BUT VALIDATE REAL IMAGE
     if not is_uploaded_file_an_image(f):
         return {"message": "This file is not a valid image."}, 400
 
@@ -589,7 +569,6 @@ def add_student():
     if not f or f.filename == "":
         return {"message": "Please select a student image."}, 400
 
-    # ACCEPT ALL EXTENSIONS BUT VALIDATE REAL IMAGE
     if not is_uploaded_file_an_image(f):
         return {"message": "This file is not a valid image."}, 400
 
@@ -605,7 +584,7 @@ def add_student():
             pass
 
         db = load_student_db()
-        db = [x for x in db if str(x.get("roll", "")).strip() != roll]  # overwrite same roll
+        db = [x for x in db if str(x.get("roll", "")).strip() != roll]
         db.append({"name": name, "roll": roll, "img_path": saved_path})
         save_student_db(db)
 
@@ -620,20 +599,32 @@ def delete_student(roll):
     return {"message": msg if ok else f"FAILED: {msg}"}, (200 if ok else 400)
 
 
+@app.post("/save_email_token")
+def save_email_token():
+    email = (request.form.get("email") or "").strip()
+    password = (request.form.get("password") or "").strip()
+
+    if not email or not password:
+        return jsonify({"message": "Email and password are required."}), 400
+
+    token = login_get_token(email, password)  # ✅ pass arguments here
+
+    save_email_token(email, token)
+    return jsonify({"message": "Token saved successfully."}), 200
+
+
+
 @app.post("/run")
 def run():
-    # do recognition + save annotated + save last_results.json
     try:
         ensure_folder(UPLOAD_DIR)
         ensure_folder(RESULTS_DIR)
 
         rows, annotated, msg = run_recognition_from_saved_students(CURRENT_GROUP_PATH)
 
-        # save rows
         with open(LAST_RESULTS_JSON, "w", encoding="utf-8") as f:
             json.dump(rows, f, indent=2, ensure_ascii=False)
 
-        # save annotated
         if annotated is not None:
             cv2.imwrite(ANNOTATED_PATH, annotated)
 
@@ -646,6 +637,8 @@ if __name__ == "__main__":
     ensure_folder(UPLOAD_DIR)
     ensure_folder(RESULTS_DIR)
     ensure_folder(STUDENT_IMG_DIR)
+    # email = request.form.get("email")
+    # password = request.form.get("password")
+    # token = login_get_token(email, password)  # ✅
 
-    # NO AUTO LOGIN HERE - user logs in from the form
     app.run(host="127.0.0.1", port=5000, debug=True)
