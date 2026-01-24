@@ -367,7 +367,7 @@
     // Login handlers
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      debugger
+      
       const email = document.getElementById("loginEmail").value.trim();
       const password = document.getElementById("loginPassword").value.trim();
       if (!email || !password) return showStatus("Email and Password are required.");

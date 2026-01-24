@@ -77,7 +77,7 @@ BASE_URL = "https://api.slcloud.3em.tech"
 
 
 def login_get_token(email: str, password: str) -> str:
-    url = f"{BASE_URL}/v1/auth/login"
+    url = f"{BASE_URL}/api/auth/login"
     payload = {"email": email, "password": password}
 
     r = requests.post(url, json=payload, headers={"accept": "text/plain"}, timeout=15)
@@ -600,7 +600,7 @@ def delete_student(roll):
 
 
 @app.post("/login")
-def save_email_token():
+def login():
     email = (request.form.get("email") or "").strip()
     password = (request.form.get("password") or "").strip()
 
