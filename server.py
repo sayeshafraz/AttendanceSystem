@@ -599,7 +599,7 @@ def delete_student(roll):
     return {"message": msg if ok else f"FAILED: {msg}"}, (200 if ok else 400)
 
 
-@app.post("/save_email_token")
+@app.post("/login")
 def save_email_token():
     email = (request.form.get("email") or "").strip()
     password = (request.form.get("password") or "").strip()

@@ -165,6 +165,19 @@
     <!-- RIGHT -->
     <div class="right">
       <div class="card">
+        <h2>Login</h2>
+
+        <form id="loginForm">
+          <div class="row">
+            <input type="email" id="loginEmail" name="login_email" placeholder="Email" />
+            <input type="password" id="loginPassword" name="login_password" placeholder="Password" />
+            <button class="primary" type="submit">Login</button>
+            <button class="danger" type="button" id="logoutBtn">Logout</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
         <h2>2) Add Student</h2>
 
         <form id="studentForm">
@@ -172,9 +185,7 @@
             <input type="text" id="name" name="name" placeholder="Student Name" />
             <input type="text" id="roll" name="roll" placeholder="Roll Number" />
 
-            <!-- ADDED: Email + Password -->
-            <input type="email" id="email" name="email" placeholder="Email" />
-            <input type="password" id="password" name="password" placeholder="Password" />
+            <!-- Email/Password moved to separate Login card -->
 
             <input type="file" id="studentFile" name="student_image" accept=".jpg,.jpeg,.png,.bmp,.tif,.tiff" />
             <button class="primary" type="submit">Add Student</button>
@@ -331,10 +342,6 @@
       document.getElementById("name").value = "";
       document.getElementById("roll").value = "";
 
-      // NEW
-      document.getElementById("email").value = "";
-      document.getElementById("password").value = "";
-
       document.getElementById("studentFile").value = "";
 
       await loadState();
@@ -356,6 +363,32 @@
       showStatus(data.message || "Done");
       await loadState();
     }
+
+    // Login handlers
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      debugger
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+      if (!email || !password) return showStatus("Email and Password are required.");
+      const fd = new FormData();
+      fd.append("email", email);
+      fd.append("password", password);
+      showStatus("Logging in...");
+      const res = await fetch("/login", { method: "POST", body: fd });
+      const data = await res.json();
+      showStatus(data.message || "Logged in");
+      if (data.success) document.getElementById("loginPassword").value = "";
+      await loadState();
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      showStatus("Logging out...");
+      const res = await fetch("/logout", { method: "POST" });
+      const data = await res.json();
+      showStatus(data.message || "Logged out");
+      await loadState();
+    });
 
     loadState();
   </script>
