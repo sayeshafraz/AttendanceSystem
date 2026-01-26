@@ -377,16 +377,17 @@
 
     // Login handler for Account card
     document.getElementById("loginBtn").addEventListener("click", async () => {
+    
+     
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
       if (!email || !password) return showStatus("Email and Password are required.");
       showStatus("Logging in...");
       try {
-        const res = await fetch("/login", {
-          method: "POST",
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
+        const fd = new FormData();
+        fd.append('email', email);
+        fd.append('password', password);
+        const res = await fetch("/login", { method: "POST", body: fd });
         const data = await res.json();
         showStatus(data.message || "Login response received.");
       } catch (err) {
