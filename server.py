@@ -175,6 +175,12 @@ def save_png_normalized(src_path: str, out_path: str):
 # =========================
 # STUDENT DB
 # =========================
+
+def load_students_fromweb():
+    # Placeholder for loading students from a web source
+    pass
+
+
 def load_student_db():
     ensure_folder(STUDENT_DB_DIR)
     ensure_folder(STUDENT_IMG_DIR)

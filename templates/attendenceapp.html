@@ -321,13 +321,13 @@
       const roll = document.getElementById("roll").value.trim();
 
       // NEW
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
+      // const email = document.getElementById("email").value.trim();
+      // const password = document.getElementById("password").value.trim();
 
       const f = document.getElementById("studentFile").files[0];
 
       if (!name || !roll) return showStatus("Name and Roll are required.");
-      if (!email || !password) return showStatus("Email and Password are required.");
+      // if (!email || !password) return showStatus("Email and Password are required.");
       if (!f) return showStatus("Please select a student image.");
 
       const fd = new FormData();
