@@ -124,6 +124,12 @@
       flex-wrap: wrap;
     }
 
+    /* Account card (top of right column) */
+    .auth-card { padding: 12px; margin-bottom: 12px; border-radius: 12px; background: #fff; border: 1px solid #e6e6e6; }
+    .auth-card label { display: block; font-size: 13px; color: #333; margin-bottom: 4px; }
+    .auth-card .field { margin-bottom: 8px; text-align: left; }
+    .auth-actions { margin-top: 8px; display: flex; gap: 8px; }
+
     /* Responsive */
     @media (max-width: 900px) {
       .wrap { flex-direction: column; }
@@ -163,31 +169,32 @@
     </div>
 
     <!-- RIGHT -->
-    <div class="right">
-      <div class="card">
-        <h2>Login</h2>
-
-        <form id="loginForm">
-          <div class="row">
-            <input type="email" id="loginEmail" name="login_email" placeholder="Email" />
-            <input type="password" id="loginPassword" name="login_password" placeholder="Password" />
-            <button class="primary" type="submit">Login</button>
-            <button class="danger" type="button" id="logoutBtn">Logout</button>
-          </div>
-        </form>
+     <div class="right">
+      <div class="auth-card">
+        <h3 style="margin:0 0 8px 0; font-size:15px;">Account</h3>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="Email" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Password" />
+        </div>
+        <div class="auth-actions">
+          <button id="loginBtn" class="primary" type="button">Login</button>
+          <button id="logoutBtn" class="danger" type="button">Logout</button>
+        </div>
       </div>
 
       <div class="card">
         <h2>2) Add Student</h2>
-
+                
         <form id="studentForm">
           <div class="row">
             <input type="text" id="name" name="name" placeholder="Student Name" />
             <input type="text" id="roll" name="roll" placeholder="Roll Number" />
+            <input id="studentFile" name="student_image" type="file">
 
-            <!-- Email/Password moved to separate Login card -->
-
-            <input type="file" id="studentFile" name="student_image" accept=".jpg,.jpeg,.png,.bmp,.tif,.tiff" />
             <button class="primary" type="submit">Add Student</button>
           </div>
         </form>
@@ -342,6 +349,10 @@
       document.getElementById("name").value = "";
       document.getElementById("roll").value = "";
 
+      // NEW
+      document.getElementById("email").value = "";
+      document.getElementById("password").value = "";
+
       document.getElementById("studentFile").value = "";
 
       await loadState();
@@ -364,30 +375,40 @@
       await loadState();
     }
 
-    // Login handlers
-    document.getElementById("loginForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById("loginEmail").value.trim();
-      const password = document.getElementById("loginPassword").value.trim();
+    // Login handler for Account card
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
       if (!email || !password) return showStatus("Email and Password are required.");
-      const fd = new FormData();
-      fd.append("email", email);
-      fd.append("password", password);
       showStatus("Logging in...");
-      const res = await fetch("/login", { method: "POST", body: fd });
-      const data = await res.json();
-      showStatus(data.message || "Logged in");
-      if (data.success) document.getElementById("loginPassword").value = "";
-      await loadState();
+      try {
+        const res = await fetch("/login", {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        showStatus(data.message || "Login response received.");
+      } catch (err) {
+        console.error(err);
+        showStatus("Login failed (network error).");
+      }
     });
 
+    // Logout handler for Account card
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       showStatus("Logging out...");
-      const res = await fetch("/logout", { method: "POST" });
-      const data = await res.json();
-      showStatus(data.message || "Logged out");
-      await loadState();
+      try {
+        const res = await fetch("/logout", { method: "POST" });
+        const data = await res.json();
+        showStatus(data.message || "Logged out.");
+        // Optionally clear inputs on logout
+        document.getElementById("email").value = "";
+        document.getElementById("password").value = "";
+      } catch (err) {
+        console.error(err);
+        showStatus("Logout failed (network error).");
+      }
     });
 
     loadState();
