@@ -1,8 +1,38 @@
 [
   {
-    "name": "uuuuu",
-    "roll": "44444",
-    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\44444_uuuuu.png",
+    "name": "imran",
+    "roll": "26541",
+    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\26541_imran.png",
+    "status": "Present"
+  },
+  {
+    "name": "aaaa",
+    "roll": "197799",
+    "img_path": "C:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\197799_aaaa.png",
+    "status": "Present"
+  },
+  {
+    "name": "sd",
+    "roll": "re",
+    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\re_sd.png",
+    "status": "Absent"
+  },
+  {
+    "name": "gggggg",
+    "roll": "y77777777",
+    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\y77777777_gggggg.png",
+    "status": "Present"
+  },
+  {
+    "name": "ggggttttttt",
+    "roll": "yyyyyy88",
+    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\yyyyyy88_ggggttttttt.png",
+    "status": "Absent"
+  },
+  {
+    "name": "vvv",
+    "roll": "0909",
+    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\0909_vvv.png",
     "status": "Absent"
   }
 ]

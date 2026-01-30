@@ -176,9 +176,56 @@ def save_png_normalized(src_path: str, out_path: str):
 # STUDENT DB
 # =========================
 
+STUDENTS_LIST = []
+
 def load_students_fromweb():
-    # Placeholder for loading students from a web source
-    pass
+    """
+    Fetches students JSON from a fixed URL using a fixed Bearer token
+    (both URL and TOKEN are defined inside this function),
+    saves students into STUDENTS_LIST (global), and returns it.
+    """
+    global STUDENTS_LIST
+
+    # ✅ URL and TOKEN are now INSIDE the function
+    url = "https://api.slcloud.3em.tech/api/branch-grade-sections/students?branchGradeSectionId=4a054772-f9cd-4ea1-8f96-3405fcc4acfc&pageNumber=1&pageSize=1000"
+
+    token = load_email_token().get("token", "") if load_email_token() else ""
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json"
+    }
+
+    try:
+        res = requests.get(url, headers=headers, timeout=20)
+
+        # If token missing/invalid/expired
+        if res.status_code == 401:
+            print("Unauthorized (401): Token is missing/invalid/expired.")
+            print("Server response:", res.text)
+            return []
+
+        res.raise_for_status()
+        data = res.json()  # JSON response
+
+        # Save into variable (list)
+        if isinstance(data, dict) and "students" in data and isinstance(data["students"], list):
+            STUDENTS_LIST = data["students"]
+        elif isinstance(data, list):
+            STUDENTS_LIST = data
+        else:
+            # If API returns a different JSON shape, keep it as-is in a list
+            STUDENTS_LIST = [data]
+
+        return STUDENTS_LIST
+
+    except requests.exceptions.RequestException as e:
+        print("Request failed:", e)
+        return []
+    except ValueError as e:
+        print("JSON parse failed:", e)
+        return []
+
 
 
 def load_student_db():
@@ -391,11 +438,16 @@ def draw_present_outlines(group_img_bgr, group_faces, matched_group_indexes):
 
     return annotated
 
-
 def run_recognition_from_saved_students(group_path):
-    db_students = load_student_db()
-    students = []
+    # ✅ 1) Call API fetch function here
+    students_from_api = load_students_fromweb()
 
+    print("Fetched from API:", len(students_from_api))
+
+    # ✅ 2) Your existing code continues...
+    db_students = load_student_db()
+
+    students = []
     for st in db_students:
         students.append(
             {
@@ -588,7 +640,7 @@ def add_student():
             os.remove(tmp_path)
         except Exception:
             pass
-
+    
         db = load_student_db()
         db = [x for x in db if str(x.get("roll", "")).strip() != roll]
         db.append({"name": name, "roll": roll, "img_path": saved_path})
