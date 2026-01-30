@@ -442,7 +442,7 @@ def run_recognition_from_saved_students(group_path):
     # ✅ 1) Call API fetch function here
     students_from_api = load_students_fromweb()
 
-    print("Fetched from API:", len(students_from_api))
+    print(students_from_api)
 
     # ✅ 2) Your existing code continues...
     db_students = load_student_db()
