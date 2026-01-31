@@ -459,15 +459,15 @@ def draw_present_outlines(group_img_bgr, group_faces, matched_group_indexes):
 def run_recognition_from_saved_students(group_path):
     # ✅ 1) Call API fetch function here
     students_from_api = load_students_fromweb()
-    db_students = load_student_db()
+    #db_students = load_student_db()
 
     students = []
-    for st in db_students:
+    for st in students_from_api:
         students.append(
             {
-                "name": st.get("name", ""),
-                "roll": st.get("roll", ""),
-                "img_path": st.get("img_path", ""),
+                "name": st.get("fullName", ""),
+                "roll": st.get("currentRollNumber", ""),
+                "img_path": st.get("photoUrl", ""),
                 "status": "Absent",
             }
         )
