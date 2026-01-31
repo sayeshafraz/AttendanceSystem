@@ -463,11 +463,15 @@ def run_recognition_from_saved_students(group_path):
 
     students = []
     for st in students_from_api:
+        img_path = st.get("photoUrl", "")
+        # Prepend base URL if photoUrl doesn't start with http
+        if img_path and not img_path.startswith("http"):
+            img_path = f"https://api.slcloud.3em.tech/api{img_path}"
         students.append(
             {
                 "name": st.get("fullName", ""),
                 "roll": st.get("currentRollNumber", ""),
-                "img_path": st.get("photoUrl", ""),
+                "img_path": img_path,
                 "status": "Absent",
             }
         )
@@ -551,8 +555,8 @@ def api_state():
     ensure_folder(STUDENT_DB_DIR)
     ensure_folder(STUDENT_IMG_DIR)
 
-    db = load_student_db()
-
+    #db = load_student_db()
+    db = load_students_fromweb()
     status_map = {}
     if os.path.isfile(LAST_RESULTS_JSON):
         try:
@@ -563,15 +567,21 @@ def api_state():
         except Exception:
             status_map = {}
 
+ 
+
+
     students = []
     for st in db:
-        img_path = st.get("img_path", "")
-        roll = str(st.get("roll", "")).strip()
+        img_path = st.get("photoUrl", "")
+        # Prepend base URL if photoUrl doesn't start with http
+        if img_path and not img_path.startswith("http"):
+            img_path = f"https://api.slcloud.3em.tech{img_path}"
+        roll = str(st.get("currentRollNumber", "")).strip()
         students.append(
             {
-                "name": st.get("name", ""),
+                "name": st.get("fullName", ""),
                 "roll": roll,
-                "img_file": os.path.basename(img_path) if img_path else "",
+                "img_file": img_path,
                 "status": status_map.get(roll, "Saved"),
             }
         )

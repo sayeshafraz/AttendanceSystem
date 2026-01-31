@@ -2,7 +2,7 @@
   {
     "name": "GHZALA ",
     "roll": "01",
-    "img_path": "/StudentPhoto/0fd275ed-e297-4c4e-b72d-aed22a2aa50b/158fbdbe-63e7-4b7a-be53-3f0f70601a21.png",
+    "img_path": "https://api.slcloud.3em.tech/api/StudentPhoto/0fd275ed-e297-4c4e-b72d-aed22a2aa50b/158fbdbe-63e7-4b7a-be53-3f0f70601a21.png",
     "status": "Invalid"
   }
 ]
