@@ -227,6 +227,36 @@ def load_students_fromweb():
         return []
 
 
+def extract_needed_student_fields(students_data):
+    """
+    Takes the fetched data (list/dict) and returns a clean list like:
+    [{"roll": "...", "name": "...", "image_url": "..."}, ...]
+    """
+    # If API sometimes returns {"students":[...]}
+    if isinstance(students_data, dict) and isinstance(students_data.get("students"), list):
+        students = students_data["students"]
+    elif isinstance(students_data, list):
+        students = students_data
+    else:
+        students = []
+
+    cleaned = []
+    for st in students:
+        # ✅ Adjust these keys based on your API response keys
+        roll = st.get("currentRollNumber") 
+        name = st.get("fullName")
+        image_url = st.get("photourl") 
+
+        cleaned.append({
+            "roll": str(roll),
+            "name": str(name),
+            "image_url": str(image_url),
+        })
+
+    return cleaned
+
+
+
 
 def load_student_db():
     ensure_folder(STUDENT_DB_DIR)
@@ -441,6 +471,10 @@ def draw_present_outlines(group_img_bgr, group_faces, matched_group_indexes):
 def run_recognition_from_saved_students(group_path):
     # ✅ 1) Call API fetch function here
     students_from_api = load_students_fromweb()
+    cleaned = extract_needed_student_fields(students_from_api)
+
+    print("Total cleaned students:", len(cleaned))
+    print(json.dumps(cleaned[:5], indent=2, ensure_ascii=False))
 
     print(students_from_api)
 
