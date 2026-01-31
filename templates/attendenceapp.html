@@ -258,7 +258,7 @@
         const im = document.createElement("img");
         im.className = "thumb";
         if (st.img_file) {
-          im.src = cacheBust(`/student_image/${encodeURIComponent(st.img_file)}`);
+          im.src = cacheBust(st.img_file);
         }
         td0.appendChild(im);
 
