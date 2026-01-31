@@ -179,14 +179,10 @@ def save_png_normalized(src_path: str, out_path: str):
 STUDENTS_LIST = []
 
 def load_students_fromweb():
-    """
-    Fetches students JSON from a fixed URL using a fixed Bearer token
-    (both URL and TOKEN are defined inside this function),
-    saves students into STUDENTS_LIST (global), and returns it.
-    """
+   
     global STUDENTS_LIST
 
-    # ✅ URL and TOKEN are now INSIDE the function
+   
     url = "https://api.slcloud.3em.tech/api/branch-grade-sections/students?branchGradeSectionId=4a054772-f9cd-4ea1-8f96-3405fcc4acfc&pageNumber=1&pageSize=1000"
 
     token = load_email_token().get("token", "") if load_email_token() else ""
@@ -198,27 +194,19 @@ def load_students_fromweb():
 
     try:
         res = requests.get(url, headers=headers, timeout=20)
-
-        # If token missing/invalid/expired
         if res.status_code == 401:
             print("Unauthorized (401): Token is missing/invalid/expired.")
             print("Server response:", res.text)
             return []
 
         res.raise_for_status()
-        data = res.json()  # JSON response
-
-        # Save into variable (list)
-        if isinstance(data, dict) and "students" in data and isinstance(data["students"], list):
-            STUDENTS_LIST = data["students"]
-        elif isinstance(data, list):
-            STUDENTS_LIST = data
+        data = res.json()  
+        if isinstance(data, dict) and "items" in data and isinstance(data["items"], list):
+            STUDENTS_LIST = data["items"]
+       
         else:
-            # If API returns a different JSON shape, keep it as-is in a list
-            STUDENTS_LIST = [data]
-
+            STUDENTS_LIST = []
         return STUDENTS_LIST
-
     except requests.exceptions.RequestException as e:
         print("Request failed:", e)
         return []
@@ -471,14 +459,6 @@ def draw_present_outlines(group_img_bgr, group_faces, matched_group_indexes):
 def run_recognition_from_saved_students(group_path):
     # ✅ 1) Call API fetch function here
     students_from_api = load_students_fromweb()
-    cleaned = extract_needed_student_fields(students_from_api)
-
-    print("Total cleaned students:", len(cleaned))
-    print(json.dumps(cleaned[:5], indent=2, ensure_ascii=False))
-
-    print(students_from_api)
-
-    # ✅ 2) Your existing code continues...
     db_students = load_student_db()
 
     students = []

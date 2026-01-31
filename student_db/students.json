@@ -1,32 +1,7 @@
 [
   {
-    "name": "imran",
-    "roll": "26541",
-    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\26541_imran.png"
-  },
-  {
-    "name": "aaaa",
-    "roll": "197799",
-    "img_path": "C:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\197799_aaaa.png"
-  },
-  {
-    "name": "sd",
-    "roll": "re",
-    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\re_sd.png"
-  },
-  {
-    "name": "gggggg",
-    "roll": "y77777777",
-    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\y77777777_gggggg.png"
-  },
-  {
-    "name": "ggggttttttt",
-    "roll": "yyyyyy88",
-    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\yyyyyy88_ggggttttttt.png"
-  },
-  {
-    "name": "vvv",
-    "roll": "0909",
-    "img_path": "c:\\Users\\ayesha\\Desktop\\SERVER\\student_db\\images\\0909_vvv.png"
+    "name": "Khan",
+    "roll": "111",
+    "img_path": "/Users/wania/Desktop/Fraz/AttendanceSystem/student_db/images/111_Khan.png"
   }
 ]

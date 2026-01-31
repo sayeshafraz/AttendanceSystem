@@ -1,0 +1,44 @@
+# Python
+*.py[cod]
+*$py.class
+*.so
+__pycache__/
+*.egg
+*.egg-info/
+dist/
+build/
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Flask
+instance/
+.webassets-cache
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project-specific
+uploads/
+static/results/
+models/*.onnx
+
+# Student data (sensitive)
+student_db/students.json
+student_db/images/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
